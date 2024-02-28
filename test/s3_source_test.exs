@@ -45,9 +45,9 @@ defmodule Membrane.AWS.S3.SourceTest do
     end
 
     test "file splitted to 16-bytes chunks", %{bypass: bypass} do
-      chunk_size = 128
+      chunk_size = 16
 
-      data = for i <- 0..10_000, do: <<i::8>>, into: <<>>
+      data = for i <- 0..(16 ** 2), do: <<i::8>>, into: <<>>
 
       splitted_binary =
         for <<chunk::binary-size(chunk_size) <- data>>, do: <<chunk::binary-size(chunk_size)>>
@@ -102,7 +102,9 @@ defmodule Membrane.AWS.S3.SourceTest do
           |> Plug.Conn.send_resp(200, "")
 
         %{method: "GET", request_path: ^request_path, req_headers: headers} ->
-          {_key, "bytes=" <> range} = Enum.find(headers, fn {key, _val} -> key == "range" end)
+          headers = Map.new(headers)
+
+          "bytes=" <> range = Map.fetch!(headers, "range")
 
           [first, second | _] = String.split(range, "-")
 

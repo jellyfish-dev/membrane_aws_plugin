@@ -1,9 +1,13 @@
 defmodule Support.BypassHelpers do
-  def start_bypass(_) do
+  @moduledoc false
+
+  @spec start_bypass(Keyword.t()) :: [bypass: Bypass.t()]
+  def start_bypass(_opts) do
     bypass = Bypass.open()
     [bypass: bypass]
   end
 
+  @spec exaws_config_for_bypass(Bypass.t()) :: ExAws.Config.t()
   def exaws_config_for_bypass(bypass) do
     ExAws.Config.new(:s3,
       access_key_id: "AKIAIOSFODNN7EXAMPLE",
