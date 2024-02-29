@@ -8,7 +8,9 @@ defmodule Membrane.AWS.S3.Source do
 
   def_options aws_config: [
                 spec: Keyword.t(),
-                description: "Credentials to AWS",
+                description: """
+                Config to ExAWS. For more information refer to [`ExAws.Config`](https://github.com/ex-aws/ex_aws/blob/main/lib/ex_aws/config.ex).
+                """,
                 default: []
               ],
               bucket: [
