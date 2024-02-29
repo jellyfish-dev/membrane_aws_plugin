@@ -6,7 +6,7 @@ defmodule Membrane.AWS.S3.Source do
 
   alias Membrane.{Buffer, RemoteStream}
 
-  def_options aws_credentials: [
+  def_options aws_config: [
                 spec: Keyword.t(),
                 description: "Credentials to AWS",
                 default: []
@@ -43,7 +43,7 @@ defmodule Membrane.AWS.S3.Source do
     file_stream =
       state.bucket
       |> ExAws.S3.download_file(state.path, :memory, state.opts)
-      |> ExAws.stream!(state.aws_credentials)
+      |> ExAws.stream!(state.aws_config)
 
     {[stream_format: {:output, %RemoteStream{type: :bytestream}}], file_stream}
   end

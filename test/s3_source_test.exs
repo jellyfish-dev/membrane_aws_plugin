@@ -26,9 +26,10 @@ defmodule Membrane.AWS.S3.SourceTest do
                    child(:s3_source, %Source{
                      bucket: @bucket_name,
                      path: file_name,
-                     aws_credentials: [
+                     aws_config: [
                        access_key_id: "dummy",
-                       secret_access_key: "dummy"
+                       secret_access_key: "dummy",
+                       http_client: ExAws.Request.HttpMock
                      ]
                    })
                    |> child(:sink, Sink),
@@ -64,9 +65,10 @@ defmodule Membrane.AWS.S3.SourceTest do
                      bucket: @bucket_name,
                      path: file_name,
                      opts: [chunk_size: chunk_size],
-                     aws_credentials: [
+                     aws_config: [
                        access_key_id: "dummy",
-                       secret_access_key: "dummy"
+                       secret_access_key: "dummy",
+                       http_client: ExAws.Request.HttpMock
                      ]
                    })
                    |> child(:sink, Sink),
