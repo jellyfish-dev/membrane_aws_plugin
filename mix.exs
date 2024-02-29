@@ -39,7 +39,7 @@ defmodule Membrane.AWS.Mixfile do
 
   def application do
     [
-      extra_applications: []
+      extra_applications: [:logger]
     ]
   end
 
@@ -62,7 +62,8 @@ defmodule Membrane.AWS.Mixfile do
 
       # Test dependency
       {:bypass, "~> 2.1", only: :test},
-      {:hackney, ">= 0.0.0", only: :test}
+      {:httpoison, "~> 2.0", only: :test},
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 

@@ -1,33 +1,35 @@
 defmodule Membrane.AWS.S3.SourceTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   import Membrane.Testing.Assertions
   import Membrane.ChildrenSpec
-  import Support.BypassHelpers
+  import Mox
 
   alias Membrane.AWS.S3.Source
   alias Membrane.Testing.{Pipeline, Sink}
 
+  @bucket_name "bucket"
+
   describe "file pass through pipeline" do
-    setup [:start_bypass]
+    setup :verify_on_exit!
+    setup :set_mox_from_context
 
-    test "whole file in one chunk", %{bypass: bypass} do
+    test "whole file in one chunk" do
       data = for i <- 0..10_000, do: <<i::8>>, into: <<>>
+      file_name = "test.txt"
 
-      setup_multipart_download_backend(
-        bypass,
-        "bucket",
-        "test.txt",
-        data
-      )
+      setup_multipart_download_backend(@bucket_name, file_name, data)
 
       assert pipeline =
                Pipeline.start_link_supervised!(
                  spec:
                    child(:s3_source, %Source{
-                     bucket: "bucket",
-                     path: "test.txt",
-                     aws_credentials: exaws_config_for_bypass(bypass)
+                     bucket: @bucket_name,
+                     path: file_name,
+                     aws_credentials: [
+                       access_key_id: "dummy",
+                       secret_access_key: "dummy"
+                     ]
                    })
                    |> child(:sink, Sink),
                  test_process: self()
@@ -44,29 +46,28 @@ defmodule Membrane.AWS.S3.SourceTest do
       assert_end_of_stream(pipeline, :sink)
     end
 
-    test "file splitted to 16-bytes chunks", %{bypass: bypass} do
+    test "file splitted to 16-bytes chunks" do
       chunk_size = 16
+      file_name = "test2.txt"
 
       data = for i <- 0..(16 ** 2), do: <<i::8>>, into: <<>>
 
       splitted_binary =
         for <<chunk::binary-size(chunk_size) <- data>>, do: <<chunk::binary-size(chunk_size)>>
 
-      setup_multipart_download_backend(
-        bypass,
-        "bucket",
-        "test2.txt",
-        data
-      )
+      setup_multipart_download_backend(@bucket_name, file_name, data)
 
       assert pipeline =
                Pipeline.start_link_supervised!(
                  spec:
                    child(:s3_source, %Source{
-                     bucket: "bucket",
-                     path: "test2.txt",
-                     aws_credentials: exaws_config_for_bypass(bypass),
-                     opts: [chunk_size: chunk_size]
+                     bucket: @bucket_name,
+                     path: file_name,
+                     opts: [chunk_size: chunk_size],
+                     aws_credentials: [
+                       access_key_id: "dummy",
+                       secret_access_key: "dummy"
+                     ]
                    })
                    |> child(:sink, Sink),
                  test_process: self()
@@ -87,40 +88,32 @@ defmodule Membrane.AWS.S3.SourceTest do
   end
 
   defp setup_multipart_download_backend(
-         bypass,
          bucket_name,
          path,
          file_body
        ) do
-    request_path = "/#{bucket_name}/#{path}"
+    request_path = "https://s3.amazonaws.com/#{bucket_name}/#{path}"
 
-    Bypass.expect(bypass, fn conn ->
-      case conn do
-        %{method: "HEAD", request_path: ^request_path} ->
-          conn
-          |> Plug.Conn.put_resp_header("Content-Length", file_body |> byte_size |> to_string)
-          |> Plug.Conn.send_resp(200, "")
+    stub(ExAws.Request.HttpMock, :request, fn
+      :head, ^request_path, _req_body, _headers, _http_opts ->
+        content_length = file_body |> byte_size |> to_string
 
-        %{method: "GET", request_path: ^request_path, req_headers: headers} ->
-          headers = Map.new(headers)
+        {:ok, %{status_code: 200, headers: %{"Content-Length" => content_length}}}
 
-          "bytes=" <> range = Map.fetch!(headers, "range")
+      :get, ^request_path, _req_body, headers, _http_opts ->
+        headers = Map.new(headers)
 
-          [first, second | _] = String.split(range, "-")
+        "bytes=" <> range = Map.fetch!(headers, "range")
 
-          first = String.to_integer(first)
-          second = String.to_integer(second)
+        [first, second | _] = String.split(range, "-")
 
-          # IO.inspect({first, second, second - first + 1}, label: :difference)
+        first = String.to_integer(first)
+        second = String.to_integer(second)
 
-          <<_head::binary-size(first), payload::binary-size(second - first + 1), _rest::binary>> =
-            file_body
+        <<_head::binary-size(first), payload::binary-size(second - first + 1), _rest::binary>> =
+          file_body
 
-          # IO.inspect(byte_size(payload), label: :WTF_PAYLOAD)
-
-          conn
-          |> Plug.Conn.send_resp(200, payload)
-      end
+        {:ok, %{status_code: 200, body: payload}}
     end)
   end
 end

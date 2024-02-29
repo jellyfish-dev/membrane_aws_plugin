@@ -45,9 +45,6 @@ defmodule Membrane.AWS.S3.Source do
       |> ExAws.S3.download_file(state.path, :memory, state.opts)
       |> ExAws.stream!(state.aws_credentials)
 
-    # Uncomment if you need to gunzip (and add dependency :stream_gzip)
-    # |> StreamGzip.gunzip()
-
     {[stream_format: {:output, %RemoteStream{type: :bytestream}}], file_stream}
   end
 
