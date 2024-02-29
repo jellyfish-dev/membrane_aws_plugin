@@ -62,7 +62,7 @@ defmodule Membrane.AWS.Mixfile do
 
       # Test dependency
       {:bypass, "~> 2.1", only: :test},
-      {:httpoison, "~> 2.0", only: :test},
+      # {:httpoison, "~> 2.0", only: :test},
       {:mox, "~> 1.0", only: :test}
     ]
   end
