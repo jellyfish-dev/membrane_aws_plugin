@@ -38,7 +38,6 @@ defmodule Membrane.AWS.S3.Source do
 
   @impl true
   def handle_playing(_ctx, state) do
-
     file_stream =
       state.bucket
       |> ExAws.S3.download_file(state.path, :memory, state.opts)
