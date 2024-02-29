@@ -38,7 +38,6 @@ defmodule Membrane.AWS.S3.Source do
 
   @impl true
   def handle_playing(_ctx, state) do
-    ExAws
 
     file_stream =
       state.bucket
