@@ -18,7 +18,7 @@ defmodule Membrane.AWS.S3.SourceTest do
       data = for i <- 0..10_000, do: <<i::8>>, into: <<>>
       file_name = "test.txt"
 
-      setup_multipart_download_backend(@bucket_name, file_name, data)
+      setup_multipart_download_backend(2, @bucket_name, file_name, data)
 
       assert pipeline =
                Pipeline.start_link_supervised!(
@@ -30,7 +30,8 @@ defmodule Membrane.AWS.S3.SourceTest do
                        access_key_id: "dummy",
                        secret_access_key: "dummy",
                        http_client: ExAws.Request.HttpMock
-                     ]
+                     ],
+                     opts: [max_concurrency: 1]
                    })
                    |> child(:sink, Sink),
                  test_process: self()
@@ -56,7 +57,7 @@ defmodule Membrane.AWS.S3.SourceTest do
       splitted_binary =
         for <<chunk::binary-size(chunk_size) <- data>>, do: <<chunk::binary-size(chunk_size)>>
 
-      setup_multipart_download_backend(@bucket_name, file_name, data)
+      setup_multipart_download_backend(18, @bucket_name, file_name, data)
 
       assert pipeline =
                Pipeline.start_link_supervised!(
@@ -64,7 +65,7 @@ defmodule Membrane.AWS.S3.SourceTest do
                    child(:s3_source, %Source{
                      bucket: @bucket_name,
                      path: file_name,
-                     opts: [chunk_size: chunk_size],
+                     opts: [chunk_size: chunk_size, max_concurrency: 1],
                      aws_config: [
                        access_key_id: "dummy",
                        secret_access_key: "dummy",
@@ -90,13 +91,14 @@ defmodule Membrane.AWS.S3.SourceTest do
   end
 
   defp setup_multipart_download_backend(
+         amount_of_request,
          bucket_name,
          path,
          file_body
        ) do
     request_path = "https://s3.amazonaws.com/#{bucket_name}/#{path}"
 
-    stub(ExAws.Request.HttpMock, :request, fn
+    expect(ExAws.Request.HttpMock, :request, amount_of_request, fn
       :head, ^request_path, _req_body, _headers, _http_opts ->
         content_length = file_body |> byte_size |> to_string
 
@@ -104,7 +106,6 @@ defmodule Membrane.AWS.S3.SourceTest do
 
       :get, ^request_path, _req_body, headers, _http_opts ->
         headers = Map.new(headers)
-
         "bytes=" <> range = Map.fetch!(headers, "range")
 
         [first, second | _] = String.split(range, "-")

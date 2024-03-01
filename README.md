@@ -30,7 +30,7 @@ The `example/` folder contains an example usage of `Membrane.AWS.S3.Source`.
 
 This demo downloads a file from S3 and saves it locally. It requires that you set these environment variables: `BUCKET`, `FILE_PATH`, `ACCESS_KEY_ID`, `SECRET_ACCESS_KEY`, `REGION`.
 ```bash
-$ elixir examples/receive.exs
+$ elixir examples/source_example.exs
 ```
 
 ## Copyright and License
