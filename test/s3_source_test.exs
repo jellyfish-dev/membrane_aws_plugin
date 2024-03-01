@@ -30,8 +30,7 @@ defmodule Membrane.AWS.S3.SourceTest do
                        access_key_id: "dummy",
                        secret_access_key: "dummy",
                        http_client: ExAws.Request.HttpMock
-                     ],
-                     opts: [max_concurrency: 1]
+                     ]
                    })
                    |> child(:sink, Sink),
                  test_process: self()
@@ -65,7 +64,7 @@ defmodule Membrane.AWS.S3.SourceTest do
                    child(:s3_source, %Source{
                      bucket: @bucket_name,
                      path: file_name,
-                     opts: [chunk_size: chunk_size, max_concurrency: 1],
+                     opts: [chunk_size: chunk_size],
                      aws_config: [
                        access_key_id: "dummy",
                        secret_access_key: "dummy",
