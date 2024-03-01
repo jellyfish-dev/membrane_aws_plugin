@@ -22,7 +22,7 @@ defmodule Example do
           region: System.fetch_env!("REGION")
         ]
       })
-      |> child(:file_sink, %Membrane.File.Sink{location: System.fetch_env!("OUTPUT_FILE")})
+      |> child(:file_sink, %Membrane.File.Sink{location: "source.example"})
     ]
 
     {[spec: structure], %{}}
