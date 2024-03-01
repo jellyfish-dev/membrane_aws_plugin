@@ -45,19 +45,19 @@ defmodule Membrane.AWS.S3.Source do
       bucket: opts.bucket,
       path: opts.path,
       opts: opts.opts,
-      chunks_stream: nil,
       cached_chunks_number: opts.cached_chunks_number,
+      chunks_stream: nil,
       chunks: :queue.new()
     }
 
-    chunks_stream = ExAws.S3.Download.build_chunk_stream(state, state.aws_config)
-
-    {[], %{state | chunks_stream: chunks_stream}}
+    {[], state}
   end
 
   @impl true
   def handle_playing(_ctx, state) do
-    {take_chunks, chunks_stream} = state.chunks_stream |> Enum.split(state.cached_chunks_number)
+    chunks_stream = ExAws.S3.Download.build_chunk_stream(state, state.aws_config)
+
+    {take_chunks, chunks_stream} = chunks_stream |> Enum.split(state.cached_chunks_number)
 
     downloaded_chunks =
       take_chunks
