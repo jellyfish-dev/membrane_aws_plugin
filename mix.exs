@@ -1,12 +1,12 @@
-defmodule Membrane.Template.Mixfile do
+defmodule Membrane.AWS.Mixfile do
   use Mix.Project
 
   @version "0.1.0"
-  @github_url "https://github.com/membraneframework/membrane_template_plugin"
+  @github_url "https://github.com/jellyfish-dev/membrane_aws_plugin"
 
   def project do
     [
-      app: :membrane_template_plugin,
+      app: :membrane_aws_plugin,
       version: @version,
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -15,19 +15,31 @@ defmodule Membrane.Template.Mixfile do
       dialyzer: dialyzer(),
 
       # hex
-      description: "Template Plugin for Membrane Framework",
+      description: "AWS Plugin for Membrane Framework",
       package: package(),
 
       # docs
-      name: "Membrane Template plugin",
+      name: "Membrane AWS plugin",
       source_url: @github_url,
-      docs: docs()
+      docs: docs(),
+
+      # test coverage
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.json": :test,
+        "test.cluster": :test,
+        "test.cluster.ci": :test
+      ]
     ]
   end
 
   def application do
     [
-      extra_applications: []
+      extra_applications: [:logger]
     ]
   end
 
@@ -37,9 +49,19 @@ defmodule Membrane.Template.Mixfile do
   defp deps do
     [
       {:membrane_core, "~> 1.0"},
+
+      # aws deps
+      {:ex_aws, "~> 2.1"},
+      {:ex_aws_s3, "~> 2.0"},
+      {:sweet_xml, "~> 0.6"},
+
+      # Dialyzer and credo
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:dialyxir, ">= 0.0.0", only: :dev, runtime: false},
-      {:credo, ">= 0.0.0", only: :dev, runtime: false}
+      {:credo, ">= 0.0.0", only: :dev, runtime: false},
+
+      # Test dependency
+      {:mox, "~> 1.0", only: :test}
     ]
   end
 
@@ -73,7 +95,7 @@ defmodule Membrane.Template.Mixfile do
       extras: ["README.md", "LICENSE"],
       formatters: ["html"],
       source_ref: "v#{@version}",
-      nest_modules_by_prefix: [Membrane.Template]
+      nest_modules_by_prefix: [Membrane.AWS]
     ]
   end
 end
