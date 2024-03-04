@@ -6,6 +6,9 @@ defmodule Membrane.AWS.S3.Source do
 
   alias Membrane.{Buffer, RemoteStream}
 
+  @default_max_concurrency 8
+  @task_timeout_milliseconds 60_000
+
   def_options aws_config: [
                 spec: Keyword.t(),
                 description: """
@@ -40,15 +43,12 @@ defmodule Membrane.AWS.S3.Source do
 
   @impl true
   def handle_init(_context, opts) do
-    state = %{
-      aws_config: ExAws.Config.new(:s3, opts.aws_config),
-      bucket: opts.bucket,
-      path: opts.path,
-      opts: opts.opts,
-      cached_chunks_number: opts.cached_chunks_number,
-      chunks_stream: nil,
-      chunks: :queue.new()
-    }
+    state =
+      Map.merge(opts, %{
+        aws_config: ExAws.Config.new(:s3, opts.aws_config),
+        chunks_stream: nil,
+        chunks: :queue.new()
+      })
 
     {[], state}
   end
@@ -63,8 +63,8 @@ defmodule Membrane.AWS.S3.Source do
       take_chunks
       |> Task.async_stream(
         &download_chunk(state, &1),
-        max_concurrency: Keyword.get(state.opts, :max_concurrency, 8),
-        timeout: Keyword.get(state.opts, :timeout, 60_000)
+        max_concurrency: state.opts[:max_concurrency] || @default_max_concurrency,
+        timeout: state.opts[:timeout] || @task_timeout_milliseconds
       )
       |> Enum.map(fn {:ok, chunk} -> chunk end)
       |> Enum.reduce(state.chunks, fn chunk, acc -> :queue.in(chunk, acc) end)
@@ -93,10 +93,11 @@ defmodule Membrane.AWS.S3.Source do
     chunks =
       case boundaries do
         [boundaries] ->
-           chunk = download_chunk(state, boundaries)
-           :queue.in(chunk, state.chunks)
-         [] ->
-            state.chunks
+          chunk = download_chunk(state, boundaries)
+          :queue.in(chunk, state.chunks)
+
+        [] ->
+          state.chunks
       end
 
     {chunks, chunks_stream}
