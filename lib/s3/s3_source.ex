@@ -91,12 +91,12 @@ defmodule Membrane.AWS.S3.Source do
     {boundaries, chunks_stream} = Enum.split(state.chunks_stream, 1)
 
     chunks =
-      if boundaries != [] do
-        [boundaries] = boundaries
-        chunk = download_chunk(state, boundaries)
-        :queue.in(chunk, state.chunks)
-      else
-        state.chunks
+      case boundaries do
+        [boundaries] ->
+           chunk = download_chunk(state, boundaries)
+           :queue.in(chunk, state.chunks)
+         [] ->
+            state.chunks
       end
 
     {chunks, chunks_stream}
