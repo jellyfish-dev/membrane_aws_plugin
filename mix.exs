@@ -61,7 +61,6 @@ defmodule Membrane.AWS.Mixfile do
       {:credo, ">= 0.0.0", only: :dev, runtime: false},
 
       # Test dependency
-      # {:httpoison, "~> 2.0", only: :test},
       {:mox, "~> 1.0", only: :test}
     ]
   end
