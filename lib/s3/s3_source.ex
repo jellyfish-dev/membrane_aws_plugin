@@ -57,7 +57,7 @@ defmodule Membrane.AWS.S3.Source do
   def handle_playing(_ctx, state) do
     chunks_stream = ExAws.S3.Download.build_chunk_stream(state, state.aws_config)
 
-    {take_chunks, chunks_stream} = chunks_stream |> Enum.split(state.cached_chunks_number)
+    {take_chunks, chunks_stream} = Enum.split(chunks_stream, state.cached_chunks_number)
 
     downloaded_chunks =
       take_chunks
